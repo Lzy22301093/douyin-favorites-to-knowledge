@@ -1,5 +1,6 @@
 import json
 import os
+import platform
 import sqlite3
 import subprocess
 import sys
@@ -190,6 +191,21 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("manual migration required", result.stderr)
         self.assertFalse(next_review.exists())
+
+    @unittest.skipIf(platform.system() != "Windows", "regression targets Windows read-only fsync")
+    def test_promote_fsync_uses_writable_handle_on_windows(self):
+        self.assertEqual(self.scan().returncode, 0)
+        self.assertEqual(self.approve().returncode, 0)
+        promoted = cli(
+            self.config,
+            "promote",
+            "--review",
+            str(self.review),
+            "--approval",
+            str(self.approval),
+        )
+        self.assertEqual(promoted.returncode, 0, promoted.stderr)
+        self.assertEqual(len(list(self.knowledge.glob("*.md"))), 2)
 
     def test_scan_dry_run_writes_nothing(self):
         result = cli(

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Windows 上 promote 阶段对只读句柄调用 `os.fsync` 抛 `OSError: [Errno 9] Bad file descriptor`，所有入库路径必败；现以可写句柄重开后 fsync，并补充仅 Windows 运行的回归测试。
+
+
 ## [2.3.0] - 2026-08-12
 
 ### Added

@@ -404,7 +404,7 @@ def promote(
             for item in pending:
                 staged = staging / f"{item['source']}-{item['aweme_id']}.md"
                 staged.write_text(item["note"], encoding="utf-8")
-                with staged.open("rb") as handle:
+                with staged.open("r+b") as handle:
                     os.fsync(handle.fileno())
             for item in pending:
                 os.replace(
