@@ -172,6 +172,38 @@ class WorkflowTests(unittest.TestCase):
         second = normalize_item({**raw, "observed_at": "2026-06-06T00:00:00+00:00"})
         self.assertEqual(first["content_sha256"], second["content_sha256"])
 
+    def test_repeat_sync_with_new_observed_at_dedupes(self):
+        self.assertEqual(self.scan().returncode, 0)
+        self.assertEqual(self.approve().returncode, 0)
+        promoted = cli(
+            self.config,
+            "promote",
+            "--review",
+            str(self.review),
+            "--approval",
+            str(self.approval),
+        )
+        self.assertEqual(promoted.returncode, 0, promoted.stderr)
+
+        payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        for item in payload["items"]:
+            item["observed_at"] = "2026-06-06T00:00:00+00:00"
+        rescan = self.root / "rescan.json"
+        rescan.write_text(json.dumps(payload), encoding="utf-8")
+        next_review = self.root / "next-review.json"
+        repeat = cli(
+            self.config,
+            "scan",
+            "--input",
+            str(rescan),
+            "--review",
+            str(next_review),
+        )
+        self.assertEqual(repeat.returncode, 0, repeat.stderr)
+        summary = json.loads(next_review.read_text(encoding="utf-8"))["summary"]
+        self.assertEqual(summary["candidate_count"], 0)
+        self.assertEqual(summary["already_promoted_count"], 2)
+
     def test_changed_promoted_item_requires_manual_migration(self):
         self.assertEqual(self.scan().returncode, 0)
         self.assertEqual(self.approve().returncode, 0)
