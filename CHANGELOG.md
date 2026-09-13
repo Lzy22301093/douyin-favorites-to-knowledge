@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `observed_at`（每次采集重新生成）不再计入 `content_sha256`：此前任何一次重复 sync 都会误报 `promoted item changed` 并整体失败，每日任务第二天起必挂；真实内容（标题/描述/转录）变化仍然照常拦截并要求人工迁移。
+
+
 ## [2.3.0] - 2026-08-12
 
 ### Added

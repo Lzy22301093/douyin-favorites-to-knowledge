@@ -102,7 +102,8 @@ def normalize_item(raw: dict[str, Any]) -> dict[str, Any]:
     analysis = _analysis(raw)
     if analysis:
         item["analysis"] = analysis
-    item["content_sha256"] = sha256_bytes(canonical_json(item))
+    hash_input = {key: value for key, value in item.items() if key != "observed_at"}
+    item["content_sha256"] = sha256_bytes(canonical_json(hash_input))
     item["note"] = render_note(item)
     return item
 
@@ -267,6 +268,7 @@ def validate_review(review: dict[str, Any]) -> list[dict[str, Any]]:
             raise ValueError(f"duplicate aweme_id in review: {aweme_id}")
         seen.add(aweme_id)
         base = {key: item[key] for key in required - {"content_sha256", "note"}}
+        base.pop("observed_at", None)
         if "analysis" in item:
             normalized_analysis = _analysis({"analysis": item["analysis"]})
             if normalized_analysis != item["analysis"]:

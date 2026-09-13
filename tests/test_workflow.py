@@ -19,7 +19,7 @@ sys.path.insert(0, PYTHONPATH)
 from douyin_favorites_knowledge.security import safe_error_message  # noqa: E402
 from douyin_favorites_knowledge.cli import _apply_configured_stages, main  # noqa: E402
 from douyin_favorites_knowledge.config import default_config_path, load_config  # noqa: E402
-from douyin_favorites_knowledge.workflow import build_review  # noqa: E402
+from douyin_favorites_knowledge.workflow import build_review, normalize_item  # noqa: E402
 
 
 def cli(config: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -160,6 +160,17 @@ class WorkflowTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn("review changed after approval", result.stderr)
+
+    def test_content_hash_ignores_observed_at(self):
+        raw = {
+            "aweme_id": "123456",
+            "title": "same content",
+            "source": "collection",
+            "observed_at": "2026-01-01T00:00:00+00:00",
+        }
+        first = normalize_item(dict(raw))
+        second = normalize_item({**raw, "observed_at": "2026-06-06T00:00:00+00:00"})
+        self.assertEqual(first["content_sha256"], second["content_sha256"])
 
     def test_changed_promoted_item_requires_manual_migration(self):
         self.assertEqual(self.scan().returncode, 0)
